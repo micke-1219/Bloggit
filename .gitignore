@@ -17,7 +17,11 @@
 mono_crash.*
 
 # Build results
-[Dd]ebug/
+Bloggit/[Bb]in/Debug/net5.0/*
+SharedLibrary/[Bb]in/Debug/net5.0/*
+WebAPI/[Bb]in/Debug/net5.0/*
+!WebAPI/[Bb]in/Debug/net5.0/Bloggit-db.mdf
+!WebAPI/[Bb]in/Debug/net5.0/Bloggit-db_log.ldf
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
@@ -27,7 +31,6 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]in/
 [Oo]bj/
 [Oo]ut/
 [Ll]og/
@@ -260,11 +263,6 @@ UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
 *.rptproj.bak
-
-# SQL Server files
-*.mdf
-*.ldf
-*.ndf
 
 # Business Intelligence projects
 *.rdl.data
