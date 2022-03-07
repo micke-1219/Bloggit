@@ -1,0 +1,113 @@
+﻿@page "/userpage/{userName}"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <SmallBanner />
+        <UserBanner userName="@userName" />
+
+        <!--CONTAINER-->
+        <div class="container d-flex px-5">
+
+            <!--BLOG LIST-->
+            @if (blogs.Count() == 0)
+            {
+                <div class="empty-bloglist mt-5 me-5">
+                    <h5 class="centered-text">Wow, such empty</h5>
+                </div>
+            }
+            else
+            {
+                <div class="me-5">
+                    @foreach (var blog in blogs)
+                    {
+                        <div class="blog-post pt-3 pb-3">
+                            <h1 class="pb-3"><a href="/blogpost/@blog.Id">@blog.Title</a></h1>
+                            <div class="d-flex pb-3">
+                                <p class="bold-text gray-text pe-3">Written By: @blog.UserName</p>
+                                <p class="bold-text gray-text">Date: @blog.CreateDate.ToString("g")</p>
+                            </div>
+                            <p style="white-space: pre-wrap;">
+                                @blog.Content
+                            </p>
+                            <div class="d-flex align-items-center pt-3">
+                                <ion-icon name="heart-outline"></ion-icon>
+                                <p class="bold-text gray-text ps-1 me-3">@GetLikeCount(blog.Id)</p>
+                                <ion-icon name="chatbox-outline"></ion-icon>
+                                <p class="bold-text gray-text ps-1">@GetCommentCount(blog.Id)</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!--SIDEBAR-->
+            <Sidebar userName="@userPageUser.UserName" registerDate="@userPageUser.RegisterDate.ToShortDateString()" numberOfBlogs="@blogs.Count()" blogList="@blogs" />
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+@code {
+    private UserModel userPageUser = new UserModel();
+    private List<UserModel> users = new List<UserModel>();
+    private List<BlogModel> blogs = new List<BlogModel>();
+    private IEnumerable<BlogLikeModel> blogLikes;
+    private IEnumerable<CommentModel> comments;
+    private bool isLoaded = false;
+
+    [Parameter]
+    public string userName { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await GetUsersAsync();
+        GetUserPageUser();
+        await GetBlogsAsync();
+        await GetBlogLikesAsync();
+        await GetCommentsAsync();
+        isLoaded = true;
+    }
+
+    private void GetUserPageUser()
+    {
+        userPageUser = users.Find(x => x.UserName == userName);
+    }
+
+    private async Task GetUsersAsync()
+    {
+        users = await http.GetFromJsonAsync<List<UserModel>>("https://localhost:44379/api/Users");
+    }
+
+    private async Task GetBlogsAsync()
+    {
+        blogs = await http.GetFromJsonAsync<List<BlogModel>>($"https://localhost:44379/api/Blogs/User/{userPageUser.Id}");
+        blogs.Reverse();
+    }
+
+    private async Task GetCommentsAsync()
+    {
+        comments = await http.GetFromJsonAsync<IEnumerable<CommentModel>>("https://localhost:44379/api/Comments");
+    }
+
+    private int GetCommentCount(int blogId)
+    {
+        var filteredComments = comments.Where(x => x.BlogId == blogId);
+        return filteredComments.Count();
+    }
+
+    private async Task GetBlogLikesAsync()
+    {
+        blogLikes = await http.GetFromJsonAsync<IEnumerable<BlogLikeModel>>("https://localhost:44379/api/BlogLikes");
+    }
+
+    private int GetLikeCount(int blogId)
+    {
+        var filteredLikes = blogLikes.Where(x => x.BlogId == blogId);
+        return filteredLikes.Count();
+    }
+}

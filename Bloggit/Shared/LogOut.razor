@@ -1,0 +1,14 @@
+﻿@page "/logout"
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await sessionStorage.RemoveItemAsync("AccessToken");
+            await sessionStorage.RemoveItemAsync("UserId");
+            navigationManager.NavigateTo("/");
+        }
+        catch { }
+    }
+}

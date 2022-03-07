@@ -1,0 +1,31 @@
+﻿<div class="user-banner">
+    <img src="images/@banner">
+    <h1>@userName</h1>
+</div>
+
+@code {
+    [Parameter]
+    public string userName { get; set; }
+
+    private List<string> banners = new List<string>();
+    private string banner;
+
+    protected override void OnParametersSet()
+    {
+        RandomizeBanner();
+    }
+
+    private void RandomizeBanner()
+    {
+        banners.Add("banner_1.jpg");
+        banners.Add("banner_2.jpg");
+        banners.Add("banner_3.jpg");
+        banners.Add("banner_4.jpg");
+        banners.Add("banner_5.jpg");
+
+        Random random = new Random();
+
+        var shuffledBanners = banners.OrderBy(a => random.Next()).ToList();
+        banner = shuffledBanners.First();
+    }
+}

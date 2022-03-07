@@ -1,0 +1,271 @@
+﻿@page "/blogpost/{blogId}"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <SmallBanner />
+        <UserBanner userName="@blog.UserName" />
+
+        <!--CONTAINER-->
+        <div class="container d-flex px-5">
+
+            <!--BLOG-->
+            <div class="blog-container me-5">
+                <div class="blog-post pt-3 pb-2">
+                    <h1 class="pb-3">@blog.Title</h1>
+                    <div class="d-flex pb-3">
+                        <p class="bold-text gray-text pe-3">Written By: <a href="/userpage/@blog.UserName">@blog.UserName</a></p>
+                        <p class="bold-text gray-text">Date: @blog.CreateDate.ToString("g")</p>
+                    </div>
+                    <p style="white-space: pre-wrap;">
+                        @blog.Content
+                    </p>
+                    @if (blog.Image != null)
+                    {
+                        <img class="blog-image mt-3" src="@imgSrc" />
+                    }
+                    <div class="d-flex pt-2">
+                        <div class="likes bubble d-flex">
+
+                            @if (userId != null)
+                            {
+                                @if (blogLikes.Any(x => x.UserId == user.Id))
+                                {
+                                    <ion-icon name="heart"></ion-icon>
+                                }
+                                else
+                                {
+                                    <ion-icon name="heart-outline" @onclick="SubmitBlogLikeAsync"></ion-icon>
+                                }
+                            }
+                            else
+                            {
+                                <ion-icon name="heart-outline"></ion-icon>
+                            }
+                            <p class="bold-text gray-text ps-1">@blogLikes.Count()</p>
+                            <span class="bubble-text">Like</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!--COMMENTS-->
+                @if (userId != null)
+                {
+                    <EditForm Model="@comment" OnSubmit="SubmitCommentAsync">
+                        <div class="mt-3">
+                            @if (comment.Reply != null)
+                            {
+                                <p style="white-space: pre-wrap;" class="bold-text italic-text gray-text quote mt-3 mb-3 pt-1 pb-1 ps-3">@comment.Reply</p>
+                            }
+                            <InputTextArea class="input p-2" placeholder="Post a comment" rows="5" @bind-Value="@comment.Content" />
+                        </div>
+                        <button type="submit" class="primary-button mt-3 mb-3">Post</button>
+                    </EditForm>
+                }
+                else
+                {
+                    <EditForm Model="@comment">
+                        <div class="mt-3">
+                            <InputTextArea class="input p-2" placeholder="Log in to post a comment" rows="5" @bind-Value="@comment.Content" />
+                        </div>
+                        <button disabled type="submit" class="primary-button disabled-button mt-3 mb-3">Post</button>
+                    </EditForm>
+                }
+
+                @foreach (var comment in comments)
+                {
+                    <div class="comment d-flex pt-3 pb-1 me-5">
+                        <ion-icon class="pt-1" name="person-circle"></ion-icon>
+                        <div>
+                            <div class="d-flex ps-3">
+                                <p class="bold-text gray-text pe-3">Comment By: <a href="/userpage/@comment.UserName">@comment.UserName</a></p>
+                                <p class="bold-text gray-text">Date: @comment.CreateDate.ToString("g")</p>
+                            </div>
+                            @if (comment.Reply != null)
+                            {
+                                <p style="white-space: pre-wrap;" class="bold-text italic-text gray-text quote mt-3 ms-3 pt-1 pb-1 ps-3">@comment.Reply</p>
+                            }
+                            <p style="white-space: pre-wrap;" class="mt-3 ms-3">@comment.Content</p>
+                            <div class="d-flex">
+                                <div class="likes bubble d-flex ms-1">
+                                    @if (userId != null)
+                                    {
+                                        @if (commentLikes.Any(x => x.CommentId == comment.Id && x.UserId == user.Id))
+                                        {
+                                            <ion-icon name="heart"></ion-icon>
+                                        }
+                                        else
+                                        {
+                                            <ion-icon name="heart-outline" @onclick="() => SubmitCommentLikeAsync(comment.Id)"></ion-icon>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <ion-icon name="heart-outline"></ion-icon>
+                                    }
+                                    <p class="bold-text gray-text ps-1">@GetCommentLikeCount(comment.Id)</p>
+                                    <span class="bubble-text">Like</span>
+                                </div>
+                                <div class="comments bubble d-flex">
+                                    <ion-icon name="chatbox-outline" @onclick="() => Reply(comment)"></ion-icon>
+                                    <span class="bubble-text">Reply</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!--SIDEBAR-->
+            <Sidebar userName="@blogUser.UserName" registerDate="@blogUser.RegisterDate.ToShortDateString()" numberOfBlogs="@blogs.Count()" blogList="@blogs" />
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+@code {
+    private string userId;
+    private UserModel user = new UserModel();
+    private UserModel blogUser = new UserModel();
+    private BlogModel blog = new BlogModel();
+    private BlogLikeModel blogLike = new BlogLikeModel();
+    private CommentModel comment = new CommentModel();
+    private CommentLikeModel commentLike = new CommentLikeModel();
+    private List<UserModel> users = new List<UserModel>();
+    private List<BlogModel> blogs = new List<BlogModel>();
+    private List<BlogLikeModel> blogLikes = new List<BlogLikeModel>();
+    private List<CommentModel> comments = new List<CommentModel>();
+    private List<CommentLikeModel> commentLikes = new List<CommentLikeModel>();
+    private bool isLoaded = false;
+
+    private string imgBase64;
+    private string imgSrc;
+
+    [Parameter]
+    public string blogId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoaded = false;
+        blog = new BlogModel();
+        blogLike = new BlogLikeModel();
+        comment = new CommentModel();
+        commentLike = new CommentLikeModel();
+        await GetBlogAsync();
+        await GetCommentsAsync();
+        await GetUserAsync();
+        await GetUsersAsync();
+        GetBlogUser();
+        await GetBlogsAsync();
+        await GetBlogLikesAsync();
+        await GetCommentLikesAsync();
+        DisplayImage();
+        isLoaded = true;
+    }
+
+    private async Task GetUserAsync()
+    {
+        userId = await sessionStorage.GetItemAsync<string>("UserId");
+        if (userId != null)
+        {
+            var userIdInt32 = Int32.Parse(userId);
+            user = await http.GetFromJsonAsync<UserModel>($"https://localhost:44379/api/Users/{userIdInt32}");
+        }
+    }
+
+    private void GetBlogUser()
+    {
+        blogUser = users.Find(x => x.UserName == blog.UserName);
+    }
+
+    private async Task GetUsersAsync()
+    {
+        users = await http.GetFromJsonAsync<List<UserModel>>("https://localhost:44379/api/Users");
+    }
+
+    private async Task GetBlogAsync()
+    {
+        var blogIdInt32 = Int32.Parse(blogId);
+        blog = await http.GetFromJsonAsync<BlogModel>($"https://localhost:44379/api/Blogs/{blogIdInt32}");
+    }
+
+    private async Task GetBlogsAsync()
+    {
+        blogs = await http.GetFromJsonAsync<List<BlogModel>>($"https://localhost:44379/api/Blogs/User/{blogUser.Id}");
+        blogs.Reverse();
+    }
+
+    private async Task GetCommentsAsync()
+    {
+        comments = await http.GetFromJsonAsync<List<CommentModel>>($"https://localhost:44379/api/Comments/Blog/{blog.Id}");
+    }
+
+    private async Task SubmitCommentAsync()
+    {
+        comment.BlogId = blog.Id;
+        comment.CreateDate = DateTime.Now;
+        comment.UpdateDate = DateTime.Now;
+        comment.LikeCount = 0;
+        comment.UserId = user.Id;
+        comment.UserName = user.UserName;
+
+        await http.PostAsJsonAsync<CommentModel>("https://localhost:44379/api/Comments", comment);
+        await GetCommentsAsync();
+        comment = new CommentModel();
+    }
+
+    private async Task GetBlogLikesAsync()
+    {
+        blogLikes = await http.GetFromJsonAsync<List<BlogLikeModel>>($"https://localhost:44379/api/BlogLikes/Blog/{blog.Id}");
+    }
+
+    private async Task SubmitBlogLikeAsync()
+    {
+        blogLike.BlogId = blog.Id;
+        blogLike.UserId = user.Id;
+        blogLike.CreateDate = DateTime.Now;
+
+        await http.PostAsJsonAsync<BlogLikeModel>("https://localhost:44379/api/BlogLikes", blogLike);
+        await GetBlogLikesAsync();
+    }
+
+    private async Task GetCommentLikesAsync()
+    {
+        commentLikes = await http.GetFromJsonAsync<List<CommentLikeModel>>("https://localhost:44379/api/CommentLikes");
+    }
+
+    private int GetCommentLikeCount(int commentId)
+    {
+        var filteredLikes = commentLikes.Where(x => x.CommentId == commentId);
+        return filteredLikes.Count();
+    }
+
+    private async Task SubmitCommentLikeAsync(int commentId)
+    {
+        var comment = comments.Find(x => x.Id == commentId);
+        commentLike.CommentId = comment.Id;
+        commentLike.UserId = user.Id;
+
+        await http.PostAsJsonAsync<CommentLikeModel>("https://localhost:44379/api/CommentLikes", commentLike);
+        await GetCommentLikesAsync();
+    }
+
+    private void Reply(CommentModel quotedComment)
+    {
+        comment.Reply = $"Replying to {quotedComment.UserName} - \"{quotedComment.Content}\"";
+    }
+
+    private void DisplayImage()
+    {
+        if (blog.Image != null)
+        {
+            imgBase64 = Convert.ToBase64String(blog.Image);
+
+            imgSrc = String.Format("data:image/jpeg;base64,{0}", imgBase64);
+        }
+    }
+}

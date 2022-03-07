@@ -1,0 +1,32 @@
+﻿a {
+    font-size: 14px;
+    color: black;
+}
+
+    a:hover {
+        color: #1DA1F2;
+    }
+
+.page-item.active .page-link {
+    background-color: #1DA1F2;
+    border-color: #1DA1F2;
+}
+
+.page-item:first-child .page-link {
+    border-top-left-radius: 50px;
+    border-bottom-left-radius: 50px;
+}
+
+.page-item:last-child .page-link {
+    border-top-right-radius: 50px;
+    border-bottom-right-radius: 50px;
+}
+
+.page-link:hover {
+    background-color: #E8E8E8;
+    border-color: #E8E8E8;
+}
+
+.page-link:focus {
+    box-shadow: none;
+}

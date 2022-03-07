@@ -1,0 +1,36 @@
+﻿@page "/notfound"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <LargeBanner />
+
+        <!--CONTAINER-->
+        <div class="container px-5">
+            <div class="centered-text">
+                <p class="not-found bold-text">404</p>
+                <h5>The page was not found</h5>
+                <button class="primary-button mt-4" @onclick="NavigateToHome">Home</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+@code {
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoaded = true;
+    }
+
+    private void NavigateToHome()
+    {
+        navigationManager.NavigateTo("/");
+    }
+}

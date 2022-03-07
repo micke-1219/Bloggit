@@ -1,0 +1,7 @@
+﻿.validation {
+    color: red;
+    margin-top: 5px;
+    display: inline-block;
+    position: absolute;
+    font-size: 12px;
+}

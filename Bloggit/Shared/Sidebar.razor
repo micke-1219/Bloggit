@@ -1,0 +1,40 @@
+﻿<div class="sidebar">
+
+    <!--USER-->
+    <div class="user mt-2">
+        <ion-icon name="person-circle"></ion-icon>
+        <h3>@userName</h3>
+    </div>
+    <div class="user-info d-flex justify-content-center mt-3">
+        <p class="bold-text gray-text">Register Date: @registerDate</p>
+        <p class="ps-2 pe-2">/</p>
+        <p class="bold-text gray-text">Blogs: @numberOfBlogs</p>
+    </div>
+
+    <!--LATEST BLOGS-->
+    <div class="mt-3 me-5">
+        <div class="latest-blogs">
+            <p class="bold-text">Latest Blogs</p>
+        </div>
+        <ul>
+            @foreach (var blog in blogList)
+            {
+                <li class="bold-text mt-3"><a href="/blogpost/@blog.Id">@blog.Title</a></li>
+            }
+        </ul>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string userName { get; set; }
+
+    [Parameter]
+    public string registerDate { get; set; }
+
+    [Parameter]
+    public int numberOfBlogs { get; set; }
+
+    [Parameter]
+    public List<BlogModel> blogList { get; set; }
+}

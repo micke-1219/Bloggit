@@ -1,0 +1,54 @@
+﻿.footer {
+    background-color: #E8E8E8;
+    border-bottom: 1px solid gray;
+}
+
+    .footer h2 {
+        font-family: 'Satisfy', cursive;
+    }
+
+    .footer p {
+        font-size: 14px;
+    }
+
+        .footer p a {
+            color: black;
+        }
+
+    .footer input {
+        font-size: 14px;
+        padding: 1rem;
+        height: 3rem;
+        border: none;
+        border-top-left-radius: 50px;
+        border-bottom-left-radius: 50px;
+        width: 100%;
+        outline: none;
+    }
+
+.subscribe p {
+    font-size: 18px;
+}
+
+.subscribe-button {
+    font-size: 14px;
+    height: 3rem;
+    padding: 0rem 1.5em;
+    color: white;
+    background-color: #1DA1F2;
+    border: none;
+    border-top-right-radius: 50px;
+    border-bottom-right-radius: 50px;
+    cursor: pointer;
+}
+
+    .subscribe-button:hover {
+        background-color: #0055A6;
+        transition: all .4s;
+    }
+
+.copyright {
+    font-size: 14px;
+    background-color: #E8E8E8;
+    text-align: center;
+}

@@ -1,0 +1,10 @@
+﻿.validation-container {
+    position: relative;
+}
+
+.validation {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+    position: absolute;
+}

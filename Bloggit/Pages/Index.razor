@@ -1,0 +1,343 @@
+﻿@page "/"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <LargeBanner />
+
+        <!--CONTAINER-->
+        <div class="container px-5">
+
+            <!--BLOG LIST BANNER-->
+            <div class="list-title-banner d-flex align-items-center justify-content-between px-3 py-3 mt-3">
+                <div class="d-flex align-items-center">
+                    <div class="banner-item d-flex align-items-center cursor-pointer @(selected=="date"?"banner-selected":"")" @onclick="SortByDate">
+                        <ion-icon class="me-2" name="@(selected=="date"?"time":"time-outline")"></ion-icon>
+                        <p>Latest</p>
+                    </div>
+                    <p class="ms-2 me-2">│</p>
+                    <div class="banner-item d-flex align-items-center cursor-pointer @(selected=="likes"?"banner-selected":"")" @onclick="SortByLikes">
+                        <ion-icon class="me-2" name="@(selected=="likes"?"heart":"heart-outline")"></ion-icon>
+                        <p>Most Liked</p>
+                    </div>
+                    <p class="ms-2 me-2">│</p>
+                    <div class="banner-item d-flex align-items-center cursor-pointer @(selected=="comments"?"banner-selected":"")" @onclick="SortByComments">
+                        <ion-icon class="me-2" name="@(selected=="comments"?"chatbox":"chatbox-outline")"></ion-icon>
+                        <p>Most Commented</p>
+                    </div>
+                </div>
+                @if (selected == "likes")
+                {
+                    <div class="dropdown">
+                        <button class="dropdown-button dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false" data-bs-offset="15,15">
+                            @dropDown
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton1">
+                            <li @onclick="() => SortByLikes()"><p class="dropdown-item cursor-pointer">All Time</p></li>
+                            <li @onclick="() => SortByLikesWithinTimeRange(7)"><p class="dropdown-item cursor-pointer">This Week</p></li>
+                            <li @onclick="() => SortByLikesWithinTimeRange(30)"><p class="dropdown-item cursor-pointer">This Month</p></li>
+                            <li @onclick="() => SortByLikesWithinTimeRange(365)"><p class="dropdown-item cursor-pointer">This Year</p></li>
+                        </ul>
+                    </div>
+                }
+                @if (selected == "comments")
+                {
+                    <div class="dropdown">
+                        <button class="dropdown-button dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false" data-bs-offset="15,15">
+                            @dropDown
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton2">
+                            <li @onclick="() => SortByComments()"><p class="dropdown-item cursor-pointer">All Time</p></li>
+                            <li @onclick="() => SortByCommentsWithinTimeRange(7)"><p class="dropdown-item cursor-pointer">This Week</p></li>
+                            <li @onclick="() => SortByCommentsWithinTimeRange(30)"><p class="dropdown-item cursor-pointer">This Month</p></li>
+                            <li @onclick="() => SortByCommentsWithinTimeRange(365)"><p class="dropdown-item cursor-pointer">This Year</p></li>
+                        </ul>
+                    </div>
+                }
+            </div>
+
+            <!--BLOG LIST-->
+            @if (blogs.Count() == 0) 
+            {
+                <h5 class="centered-text">No blogs found</h5>
+            }
+            else 
+            {
+                @foreach (var blog in blogsToDisplay)
+                {
+                    <div class="blog-list pt-3 pb-3">
+                        <h5 class="bold-text pb-3"><a href="/blogpost/@blog.Id">@blog.Title</a></h5>
+                        <div class="d-flex align-items-center pb-3">
+                            <p class="bold-text gray-text pe-3">Written By: <a href="/userpage/@blog.UserName">@blog.UserName</a></p>
+                            <p class="bold-text gray-text">Date: @blog.CreateDate.ToString("g")</p>
+                        </div>
+                        <p>
+                            @blog.Content
+                        </p>
+                        <div class="d-flex align-items-center pt-3">
+                            <ion-icon name="heart-outline"></ion-icon>
+                            <div class="d-flex">
+                                <p class="bold-text gray-text ps-1">@GetLikeCount(blog.Id)</p>
+                                @if (selected == "likes" && timeRange != null)
+                                {
+                                    <p class="bold-text gray-text ps-1">(@blog.LikeCount this @timeRange)</p>
+                                }
+                            </div>
+                            <ion-icon class="ms-3" name="chatbox-outline"></ion-icon>
+                            <div class="d-flex">
+                                <p class="bold-text gray-text ps-1">@GetCommentCount(blog.Id)</p>
+                                @if (selected == "comments" && timeRange != null)
+                                {
+                                    <p class="bold-text gray-text ps-1">(@blog.CommentCount this @timeRange)</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div class="d-flex justify-content-center">
+                    <div class="mt-3">
+                        <Pagination TotalPages="totalPages" CurrentPage="currentPage" Radius="3" SelectedPage="SelectedPage" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+@code {
+    private List<BlogModel> blogs = new List<BlogModel>();
+    private List<BlogModel> blogsByLikes = new List<BlogModel>();
+    private List<BlogModel> blogsByComments = new List<BlogModel>();
+    private List<BlogModel> blogsToDisplay = new List<BlogModel>();
+    private IEnumerable<BlogLikeModel> blogLikes;
+    private IEnumerable<CommentModel> comments;
+    private string selected = "date";
+    private int filteredCommentCount;
+    private int filteredBlogLikeCount;
+    private string timeRange;
+    private string dropDown = "All time";
+    private bool isLoaded = false;
+
+    private double totalPages;
+    private int currentPage = 1;
+    private int itemsPerPage = 5;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetBlogsAsync();
+        await GetBlogLikesAsync();
+        await GetCommentsAsync();
+        isLoaded = true;
+    }
+
+    private void SelectedPage(int selectedPage)
+    {
+        currentPage = selectedPage;
+        var skipCount = itemsPerPage * (currentPage - 1);
+        if (selected == "date")
+        {
+            blogsToDisplay = blogs.Skip(skipCount).Take(itemsPerPage).ToList();
+        }
+        if (selected == "likes")
+        {
+            blogsToDisplay = blogsByLikes.Skip(skipCount).Take(itemsPerPage).ToList();
+        }
+        if (selected == "comments")
+        {
+            blogsToDisplay = blogsByComments.Skip(skipCount).Take(itemsPerPage).ToList();
+        }
+    }
+
+    private async Task GetBlogsAsync()
+    {
+        blogs = await http.GetFromJsonAsync<List<BlogModel>>("https://localhost:44379/api/Blogs");
+        blogs.Reverse();
+
+        if (blogs != null)
+        {
+            totalPages = Math.Ceiling((double)blogs.Count() / itemsPerPage);
+            blogsToDisplay = blogs.Skip(0).Take(itemsPerPage).ToList();
+        }
+    }
+
+    private async Task GetCommentsAsync()
+    {
+        comments = await http.GetFromJsonAsync<IEnumerable<CommentModel>>("https://localhost:44379/api/Comments");
+    }
+
+    private int GetCommentCount(int blogId)
+    {
+        var filteredComments = comments.Where(x => x.BlogId == blogId);
+        return filteredComments.Count();
+    }
+
+    private async Task GetBlogLikesAsync()
+    {
+        blogLikes = await http.GetFromJsonAsync<IEnumerable<BlogLikeModel>>("https://localhost:44379/api/BlogLikes");
+    }
+
+    private int GetLikeCount(int blogId)
+    {
+        var filteredLikes = blogLikes.Where(x => x.BlogId == blogId);
+        return filteredLikes.Count();
+    }
+
+    private void SortByDate()
+    {
+        selected = "date";
+
+        blogs = blogs.OrderByDescending(x => x.CreateDate).ToList();
+        blogsToDisplay = blogs.Skip(0).Take(itemsPerPage).ToList();
+        totalPages = Math.Ceiling((double)blogs.Count() / itemsPerPage);
+        currentPage = 1;
+
+        StateHasChanged();
+    }
+
+    private void SortByLikes()
+    {
+        GetBlogsAsync().GetAwaiter();
+
+        selected = "likes";
+        timeRange = null;
+        dropDown = "All Time";
+
+        foreach (var blog in blogs)
+        {
+            blog.LikeCount = GetLikeCount(blog.Id);
+        }
+
+        blogsByLikes = blogs.Where(x => x.LikeCount >= 1).ToList();
+        blogsByLikes = blogsByLikes.OrderByDescending(x => x.LikeCount).ToList();
+        blogsToDisplay = blogsByLikes.Skip(0).Take(itemsPerPage).ToList();
+        totalPages = Math.Ceiling((double)blogsByLikes.Count() / itemsPerPage);
+        currentPage = 1;
+
+        StateHasChanged();
+    }
+
+    private void SortByLikesWithinTimeRange(int days)
+    {
+        GetBlogsAsync().GetAwaiter();
+
+        selected = "likes";
+
+        switch (days)
+        {
+            case 7:
+                timeRange = "week";
+                dropDown = "This Week";
+                break;
+            case 30:
+                timeRange = "month";
+                dropDown = "This Month";
+                break;
+            case 365:
+                timeRange = "year";
+                dropDown = "This Year";
+                break;
+        }
+
+        foreach (var blog in blogs)
+        {
+            blog.LikeCount = GetLikeCount(blog.Id);
+        }
+
+        var filteredBlogLikes = blogLikes.Where(x => x.CreateDate > DateTime.Now.AddDays(-days)).ToList();
+        var blogIds = filteredBlogLikes.Select(x => x.BlogId).ToList();
+        blogIds = blogIds.Distinct().ToList();
+        var filteredBlogs = new List<BlogModel>();
+
+        foreach (var blogId in blogIds)
+        {
+            var blog = blogs.Find(x => x.Id == blogId);
+            filteredBlogLikeCount = filteredBlogLikes.Where(x => x.BlogId == blog.Id).Count();
+            blog.LikeCount = filteredBlogLikeCount;
+            filteredBlogs.Add(blog);
+        }
+
+        blogs = filteredBlogs;
+        blogs = blogs.OrderByDescending(x => x.LikeCount).ToList();
+        blogsToDisplay = blogs.Skip(0).Take(itemsPerPage).ToList();
+        totalPages = Math.Ceiling((double)blogs.Count() / itemsPerPage);
+        currentPage = 1;
+
+        StateHasChanged();
+    }
+
+    private void SortByComments()
+    {
+        GetBlogsAsync().GetAwaiter();
+
+        selected = "comments";
+        timeRange = null;
+        dropDown = "All Time";
+
+        foreach (var blog in blogs)
+        {
+            blog.CommentCount = GetCommentCount(blog.Id);
+        }
+
+        blogsByComments = blogs.Where(x => x.CommentCount >= 1).ToList();
+        blogsByComments = blogsByComments.OrderByDescending(x => x.CommentCount).ToList();
+        blogsToDisplay = blogsByComments.Skip(0).Take(itemsPerPage).ToList();
+        totalPages = Math.Ceiling((double)blogsByComments.Count() / itemsPerPage);
+        currentPage = 1;
+
+        StateHasChanged();
+    }
+
+    private void SortByCommentsWithinTimeRange(int days)
+    {
+        GetBlogsAsync().GetAwaiter();
+
+        selected = "comments";
+
+        switch (days)
+        {
+            case 7:
+                timeRange = "week";
+                dropDown = "This Week";
+                break;
+            case 30:
+                timeRange = "month";
+                dropDown = "This Month";
+                break;
+            case 365:
+                timeRange = "year";
+                dropDown = "This Year";
+                break;
+        }
+
+        foreach (var blog in blogs)
+        {
+            blog.CommentCount = GetCommentCount(blog.Id);
+        }
+
+        var filteredComments = comments.Where(x => x.CreateDate > DateTime.Now.AddDays(-days)).ToList();
+        var blogIds = filteredComments.Select(x => x.BlogId).ToList();
+        blogIds = blogIds.Distinct().ToList();
+        var filteredBlogs = new List<BlogModel>();
+
+        foreach (var blogId in blogIds)
+        {
+            var blog = blogs.Find(x => x.Id == blogId);
+            filteredCommentCount = filteredComments.Where(x => x.BlogId == blog.Id).Count();
+            blog.CommentCount = filteredCommentCount;
+            filteredBlogs.Add(blog);
+        }
+
+        blogs = filteredBlogs;
+        blogs = blogs.OrderByDescending(x => x.CommentCount).ToList();
+        blogsToDisplay = blogs.Skip(0).Take(itemsPerPage).ToList();
+        totalPages = Math.Ceiling((double)blogs.Count() / itemsPerPage);
+        currentPage = 1;
+
+        StateHasChanged();
+    }
+}

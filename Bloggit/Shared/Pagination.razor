@@ -1,0 +1,66 @@
+﻿@using SharedLibrary.Models;
+
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        @foreach (var item in pages)
+        {
+            <li @onclick="() => SelectCurrentPage(item)" class="page-item @(item.Enabled ? null : "disabled") @(item.Active ? "active" : null)">
+                <a class="page-link bold-text" href="#">@item.Text</a>
+            </li>
+        }
+    </ul>
+</nav>
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+    [Parameter]
+    public double TotalPages { get; set; }
+    [Parameter]
+    public int Radius { get; set; } = 3;
+    [Parameter]
+    public EventCallback<int> SelectedPage { get; set; }
+    private List<PageModel> pages;
+
+    protected override void OnParametersSet()
+    {
+        LoadPages();
+    }
+
+    private void LoadPages()
+    {
+        pages = new List<PageModel>();
+
+        var hasPreviousPage = CurrentPage != 1;
+        var previousPage = CurrentPage - 1;
+        pages.Add(new PageModel("‹", previousPage, hasPreviousPage));
+
+        for (int i = 1; i <= TotalPages; i++)
+        {
+            if (i >= CurrentPage - Radius && i <= CurrentPage + Radius)
+            {
+                pages.Add(new PageModel(i.ToString(), i, true) { Active = CurrentPage == i });
+            }
+        }
+
+        var hasNextPage = CurrentPage != TotalPages;
+        var nextPage = CurrentPage + 1;
+        pages.Add(new PageModel("›", nextPage, hasNextPage));
+    }
+
+    private async void SelectCurrentPage(PageModel page)
+    {
+        if (page.PageIndex == CurrentPage)
+        {
+            return;
+        }
+
+        if (!page.Enabled)
+        {
+            return;
+        }
+
+        CurrentPage = page.PageIndex;
+        await SelectedPage.InvokeAsync(page.PageIndex);
+    }
+}

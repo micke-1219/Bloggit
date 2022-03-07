@@ -1,0 +1,34 @@
+﻿@page "/comingsoon"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <LargeBanner />
+
+        <!--CONTAINER-->
+        <div class="centered-text">
+            <ion-icon class="empty-page-icon" name="build"></ion-icon>
+            <h5 class="mt-2">Coming soon, we're working on it</h5>
+            <button class="primary-button mt-4" @onclick="NavigateToHome">Home</button>
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+@code {
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoaded = true;
+    }
+
+    private void NavigateToHome()
+    {
+        navigationManager.NavigateTo("/");
+    }
+}

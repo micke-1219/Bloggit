@@ -1,0 +1,42 @@
+﻿.small-banner {
+    background-color: #1DA1F2;
+}
+
+    .small-banner h2 {
+        font-family: 'Satisfy', cursive;
+        color: white;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .small-banner ion-icon {
+        font-size: 22px;
+    }
+
+.small-banner-button {
+    font-weight: 700;
+    text-align: center;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50px;
+    padding: 0.5rem 2.5rem;
+    display: inline-block;
+    width: 10rem;
+    transition: all .4s;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+    .small-banner-button:hover {
+        color: #1DA1F2;
+        background-color: white;
+        transition: all .4s;
+    }
+
+.logged-in-user {
+    color: white;
+}
+
+    .logged-in-user:hover {
+        color: white;
+    }

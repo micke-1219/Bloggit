@@ -1,0 +1,15 @@
+﻿.form-container {
+    width: 100%;
+}
+
+.validation-container {
+    position: relative;
+}
+
+.validation {
+    margin-top: 5px;
+    display: inline-block;
+    position: absolute;
+    font-size: 12px;
+    position: absolute;
+}

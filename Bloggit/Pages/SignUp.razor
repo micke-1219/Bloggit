@@ -1,0 +1,145 @@
+﻿@page "/signup"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <LargeBanner />
+
+        <!--CONTAINER-->
+        <div class="container px-5">
+            @if (userId != null)
+            {
+                <div class="centered-text">
+                    <ion-icon class="empty-page-icon" name="alert-circle"></ion-icon>
+                    <h5 class="mt-2">You are already logged in</h5>
+                    <button class="primary-button mt-4" @onclick="NavigateToHome">Home</button>
+                </div>
+            }
+            else
+            {
+                <h2 class="mt-5 mb-3">Sign up</h2>
+                <p class="mb-3">Register a user to be able to post blogs and comments. Already a member? Log in <a href="/login">here</a>.</p>
+
+                <EditForm Model="@signupModel" novalidate OnValidSubmit="SignUpUserAsync">
+                    <DataAnnotationsValidator />
+                    <div class="d-flex mt-3 mb-4">
+                        <div class="form-container me-3">
+                            <InputText class="input p-2" placeholder="Username" required @bind-Value="@signupModel.UserName" />
+                            <div class="validation-container">
+                                <div class="validation">
+                                    <ValidationMessage For="() => signupModel.UserName" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-container ms-3">
+                            <InputText type="email" class="input p-2" placeholder="Email adress" required @bind-Value="@signupModel.Email" />
+                            <div class="validation-container">
+                                <div class="validation">
+                                    <ValidationMessage For="() => signupModel.Email" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-4">
+                        <div class="form-container me-3">
+                            <InputText type="password" class="input p-2" placeholder="Password" required @bind-Value="@signupModel.Password" />
+                            <div class="validation-container">
+                                <div class="validation">
+                                    <ValidationMessage For="() => signupModel.Password" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-container ms-3">
+                            <InputText type="password" class="input p-2" placeholder="Confirm password" required @bind-Value="@signupModel.PasswordConfirm" />
+                            <div class="validation-container">
+                                <div class="validation">
+                                    <ValidationMessage For="() => signupModel.PasswordConfirm" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="primary-button" type="submit" data-bs-toggle="modal" data-bs-target="#registerModal">Sign Up</button>
+                </EditForm>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+<!--MODAL-->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title blue-text">Sign Up</h5>
+            </div>
+            <div class="modal-body">
+                @if (succeed == true)
+                {
+                    <p>Registration successful!</p>
+                }
+                else
+                {
+                    <p>Registration failed.</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="primary-button" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private SignUpModel signupModel;
+    private List<UserModel> users = new List<UserModel>();
+    private bool succeed = false;
+    private string userId;
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        signupModel = new SignUpModel();
+        await GetUsersAsync();
+        await GetUserIdAsync();
+        isLoaded = true;
+    }
+
+    private async Task GetUsersAsync()
+    {
+        users = await http.GetFromJsonAsync<List<UserModel>>("https://localhost:44379/api/Users");
+    }
+
+    private async Task SignUpUserAsync()
+    {
+        if (!users.Any(x => x.Email == signupModel.Email))
+        {
+            await http.PostAsJsonAsync("https://localhost:44379/api/Users/signup", signupModel);
+            succeed = true;
+            signupModel = new SignUpModel();
+            Console.WriteLine("Successfully signed up user!");
+        }
+
+        else
+        {
+            signupModel = new SignUpModel();
+            Console.WriteLine("Failed to sign up user.");
+        }
+    }
+
+    private async Task GetUserIdAsync()
+    {
+        userId = await sessionStorage.GetItemAsync<string>("UserId");
+    }
+
+    private void NavigateToHome()
+    {
+        navigationManager.NavigateTo("/");
+    }
+}

@@ -1,0 +1,90 @@
+﻿@page "/login"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <LargeBanner />
+
+        <!--CONTAINER-->
+        <div class="container px-5">
+            @if (userId != null)
+            {
+                <div class="centered-text">
+                    <ion-icon class="empty-page-icon" name="alert-circle"></ion-icon>
+                    <h5 class="mt-2">You are already logged in</h5>
+                    <button class="primary-button mt-4" @onclick="NavigateToHome">Home</button>
+                </div>
+            }
+            else
+            {
+                <h2 class="mt-5 mb-3">Log In</h2>
+                <p class="mb-3">Log in with your email adress and password. Not a member? Sign up <a href="/signup">here</a>.</p>
+
+                <EditForm Model="@loginModel" novalidate OnSubmit="LoginUserAsync">
+                    <div class="d-flex">
+                        <InputText type="email" class="input p-2 me-3" placeholder="Email adress" @bind-Value="@loginModel.Email" />
+                        <InputText type="password" class="input p-2 ms-3" placeholder="Password" @bind-Value="@loginModel.Password" />
+                    </div>
+
+                    @if (status == "BadRequest")
+                    {
+                        <div class="validation">Incorrect email or password.</div>
+                    }
+
+                    <button type="submit" class="primary-button mt-4">Log In</button>
+                </EditForm>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+@code {
+    private LogInModel loginModel;
+    private string status;
+    private string userId;
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loginModel = new LogInModel();
+        await GetUserIdAsync();
+        isLoaded = true;
+    }
+
+    private async Task LoginUserAsync()
+    {
+        var response = await http.PostAsJsonAsync("https://localhost:44379/api/Users/login", loginModel);
+        status = response.StatusCode.ToString();
+
+        if (status == "OK")
+        {
+            var data = JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+
+            await sessionStorage.SetItemAsync<string>("AccessToken", data.accessToken.ToString());
+            await sessionStorage.SetItemAsync<string>("UserId", data.id.ToString());
+
+            Console.WriteLine("Successfully logged in user!");
+
+            navigationManager.NavigateTo("/");
+        }
+        else
+        {
+            Console.WriteLine("Failed to log in user.");
+        }
+    }
+
+    private async Task GetUserIdAsync()
+    {
+        userId = await sessionStorage.GetItemAsync<string>("UserId");
+    }
+
+    private void NavigateToHome()
+    {
+        navigationManager.NavigateTo("/");
+    }
+}

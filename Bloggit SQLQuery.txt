@@ -1,0 +1,54 @@
+CREATE TABLE Users ( 
+	[Id] int not null identity(1,1) primary key,
+	[UserName] nvarchar(50) not null,
+	[Email] varchar(100) not null,
+	[PasswordHash] varbinary(max) not null,
+	[PasswordSalt] varbinary(max) not null,
+	[BlogCount] int not null,
+	[CommentCount] int not null,
+	[RegisterDate] datetime not null
+)
+
+GO
+
+CREATE TABLE Blogs ( 
+	[Id] int not null identity(1,1) primary key,
+	[Title] nvarchar(50) not null,
+	[Content] nvarchar(max) not null,
+	[CreateDate] datetime not null,
+	[UpdateDate] datetime not null,
+	[Image] varbinary(max),
+	[CommentCount] int not null,
+	[LikeCount] int not null,
+	[UserName] nvarchar(50) not null references Users(UserName),
+	[UserId] int not null references Users(Id)
+)
+
+GO
+
+CREATE TABLE BlogLikes (
+	[Id] int not null identity(1,1) primary key,
+	[BlogId] int not null references Blogs(Id),
+	[UserId] int not null references Users(Id)
+)
+
+GO
+
+CREATE TABLE Comments (
+	[Id] int not null identity(1,1) primary key,
+	[Content] nvarchar(max) not null,
+	[CreateDate] datetime not null,
+	[UpdateDate] datetime not null,
+	[LikeCount] int not null,
+	[UserName] nvarchar(50) not null references Users(UserName),
+	[BlogId] int not null references Blogs(Id),
+	[UserId] int not null references Users(Id)
+)
+
+GO
+
+CREATE TABLE CommentLikes (
+	[Id] int not null identity(1,1) primary key,
+	[CommentId] int not null references Comments(Id),
+	[UserId] int not null references Users(Id)
+)

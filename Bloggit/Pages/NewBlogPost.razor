@@ -1,0 +1,152 @@
+﻿@page "/newblogpost"
+
+<div class="main-page">
+    @if (isLoaded)
+    {
+        <!--BANNER-->
+        <LargeBanner />
+
+        <!--CONTAINER-->
+        <div class="container px-5">
+            @if (userId != null)
+            {
+                <h2 class="mt-5 mb-4">New Blog Post</h2>
+                <EditForm Model="@blog" OnValidSubmit="SubmitBlogAsync">
+                    <DataAnnotationsValidator />
+                    <div class="d-flex justify-content-between mb-4">
+                        <label>Title</label>
+                        <div>
+                            <InputText class="input new-blog-forms p-2" @bind-Value="@blog.Title" />
+                            <div class="validation-container">
+                                <div class="validation">
+                                    <ValidationMessage For="() => blog.Title" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <label>Content</label>
+                        <div>
+                            <InputTextArea class="input new-blog-forms p-2" rows="15" @bind-Value="@blog.Content" />
+                            <div class="validation-container">
+                                <div class="validation">
+                                    <ValidationMessage For="() => blog.Content" />
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <label>Image</label>
+                        <div>
+                            <InputFile class="form-control new-blog-forms" OnChange="@HandleSelection"></InputFile>
+                            @if (showValidationMessage)
+                            {
+                                <div class="validation-container">
+                                    <p class="validation">Only .jpg and .png are supported!</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="primary-button">Publish</button>
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <div class="centered-text">
+                    <ion-icon class="empty-page-icon" name="alert-circle"></ion-icon>
+                    <h5 class="mt-2">Log in to post a blog</h5>
+                    <button class="primary-button mt-4" @onclick="NavigateToHome">Home</button>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="page-loader"></div>
+    }
+</div>
+
+@code {
+    private BlogModel blog;
+    private UserModel user = new UserModel();
+    IReadOnlyList<IBrowserFile> selectedFiles = new List<IBrowserFile>();
+    private string userId;
+    private int maxAllowedFiles = 1;
+    private long maxFileSize = 5000000;
+    private bool showValidationMessage = false;
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        blog = new BlogModel();
+        await GetUserAsync();
+        isLoaded = true;
+    }
+
+    private async Task GetUserAsync()
+    {
+        userId = await sessionStorage.GetItemAsync<string>("UserId");
+        if (userId != null)
+        {
+            var userIdInt32 = Int32.Parse(userId);
+            user = await http.GetFromJsonAsync<UserModel>($"https://localhost:44379/api/Users/{userIdInt32}");
+        }
+    }
+
+    private void HandleSelection(InputFileChangeEventArgs eventArgs)
+    {
+        selectedFiles = eventArgs.GetMultipleFiles(maxAllowedFiles);
+        showValidationMessage = false;
+        this.StateHasChanged();
+    }
+
+    private async Task SubmitBlogAsync()
+    {
+        blog.CreateDate = DateTime.Now;
+        blog.UpdateDate = DateTime.Now;
+        blog.CommentCount = 0;
+        blog.LikeCount = 0;
+        blog.UserName = user.UserName;
+        blog.UserId = user.Id;
+
+        if (selectedFiles.Count() != 0)
+        {
+            foreach (var file in selectedFiles)
+            {
+                if (file.ContentType.Contains("jpeg") || file.ContentType.Contains("png"))
+                {
+                    var resizedFile = await file.RequestImageFileAsync(file.ContentType, 900, 600);
+                    Stream stream = resizedFile.OpenReadStream(maxFileSize);
+                    MemoryStream memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    stream.Close();
+
+                    blog.Image = memoryStream.ToArray();
+                    memoryStream.Close();
+
+                    await http.PostAsJsonAsync<BlogModel>("https://localhost:44379/api/Blogs", blog);
+
+                    navigationManager.NavigateTo("/");
+                }
+                else
+                {
+                    showValidationMessage = true;
+                }
+            }
+        }
+        else
+        {
+            await http.PostAsJsonAsync<BlogModel>("https://localhost:44379/api/Blogs", blog);
+
+            navigationManager.NavigateTo("/");
+        }
+    }
+
+    private void NavigateToHome()
+    {
+        navigationManager.NavigateTo("/");
+    }
+}
