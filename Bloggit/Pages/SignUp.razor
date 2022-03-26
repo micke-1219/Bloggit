@@ -18,6 +18,20 @@
             }
             else
             {
+                @if (showSuccessBanner)
+                {
+                    <div class="success-banner d-flex align-items-center p-3 mt-5">
+                        <ion-icon name="checkmark-circle"></ion-icon>
+                        <p class="bold-text ms-2">Successfully signed up user!</p>
+                    </div>
+                }
+                @if (showFailBanner)
+                {
+                    <div class="fail-banner d-flex align-items-center p-3 mt-5">
+                        <ion-icon name="close-circle"></ion-icon>
+                        <p class="bold-text ms-2">Failed to sign up user.</p>
+                    </div>
+                }
                 <h2 class="mt-5 mb-3">Sign up</h2>
                 <p class="mb-3">Register a user to be able to post blogs and comments. Already a member? Log in <a href="/login">here</a>.</p>
 
@@ -61,7 +75,7 @@
                         </div>
                     </div>
 
-                    <button class="primary-button" type="submit" data-bs-toggle="modal" data-bs-target="#registerModal">Sign Up</button>
+                    <button class="primary-button" type="submit">Sign Up</button>
                 </EditForm>
             }
         </div>
@@ -72,34 +86,11 @@
     }
 </div>
 
-<!--MODAL-->
-<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title blue-text">Sign Up</h5>
-            </div>
-            <div class="modal-body">
-                @if (succeed == true)
-                {
-                    <p>Registration successful!</p>
-                }
-                else
-                {
-                    <p>Registration failed.</p>
-                }
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="primary-button" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @code {
     private SignUpModel signupModel;
     private List<UserModel> users = new List<UserModel>();
-    private bool succeed = false;
+    private bool showSuccessBanner = false;
+    private bool showFailBanner = false;
     private string userId;
     private bool isLoaded = false;
 
@@ -121,13 +112,16 @@
         if (!users.Any(x => x.Email == signupModel.Email))
         {
             await http.PostAsJsonAsync("https://localhost:44379/api/Users/signup", signupModel);
-            succeed = true;
+            showFailBanner = false;
+            showSuccessBanner = true;
             signupModel = new SignUpModel();
             Console.WriteLine("Successfully signed up user!");
         }
 
         else
         {
+            showSuccessBanner = false;
+            showFailBanner = true;
             signupModel = new SignUpModel();
             Console.WriteLine("Failed to sign up user.");
         }

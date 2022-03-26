@@ -13,3 +13,25 @@
     font-size: 12px;
     position: absolute;
 }
+
+[name="checkmark-circle"] {
+    font-size: 22px;
+    margin-bottom: 2px;
+}
+
+[name="close-circle"] {
+    font-size: 22px;
+    margin-bottom: 2px;
+}
+
+.success-banner {
+    background-image: linear-gradient(to bottom, #97e5b8, #58d68d);
+    border-radius: 4px;
+    color: #1d7442;
+}
+
+.fail-banner {
+    background-image: linear-gradient(to bottom, #ff8989, #ff3b3b);
+    border-radius: 4px;
+    color: #9d0000;
+}
